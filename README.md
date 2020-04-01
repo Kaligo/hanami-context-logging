@@ -1,8 +1,83 @@
 # Hanami::Context::Logging
 
-Welcome to your new gem! In this directory, you'll find the files you need to be able to package up your Ruby library into a gem. Put your Ruby code in the file `lib/hanami_context_logging`. To experiment with that code, run `bin/console` for an interactive prompt.
+### What is this?
+This is a modification on top of Hanami::Logger to allow context logging.
 
-TODO: Delete this and the text above, and describe your gem
+### What is context logging?
+It's simply, logging the context or state of the application/processes without having to define it every time. Below is an example:
+```
+# Without context logging:
+logger.info "[controller=#{self.class}] [user_id#{user.id}] Error during user update"
+# => "[controller=UserUpdate] [user_id=user123] Error during user update"
+
+# With context logging
+MyContextProvider.context # => { controller: self.class, user_id: user.id }
+logger = HanamiContextLogging::Logger.new(context_provider: MyContextProvider)
+
+...
+
+logger.info "Error during user update"
+# => "[controller=UserUpdate] [user_id=user123] Error during user update"
+```
+
+### About context_provider
+context_provider is simply any object that responds to `#context` which returns a hash. The below are all valid context providers
+```
+# struct provider
+ContextProviderStruct = Struct.new(:context)
+provider = ContextProviderStruct.new(a_context: 'a_value')
+provider.context # returns context, all good
+
+# A class
+class ContextProviderClass
+  def self.context
+    { a_context: 'a_value' }
+  end
+end
+provider = ContextProviderClass
+provider.context # returns context, all good
+
+# An object
+class ContextProviderClass
+  def context
+    { a_context: 'a_value' }
+  end
+end
+provider = ContextProviderClass.new
+provider.context # returns context, all good
+```
+
+The logger allows you to define your own context provider. A use case for context provider is when the context is not yet known during initialization, but will be known during logging. For example
+```
+# request_context_provider.rb
+class RequestContextProvider
+  def self.context
+    { request_id: request.env['HTTP_X_REQUEST_ID'] } # read some request environment headers
+  end
+end
+
+# environment.rb
+logger HanamiContextLogging::Logger.new(context_provider: RequestContextProvider) # during initialization, we are not receiving any http requests, so there is no context yet
+
+# request_controller.rb
+Hanami.logger.info "Request accepted"
+# => "[request_id=id123] Request accepted"
+```
+
+### Transient contexts
+
+This context logger also provides a method `with_context` to add transient contexts in a block
+```
+logger = HanamiContextLogging::Logger.new
+
+logger.with_context(controller: self.class, user_id: user.id) do
+  logger.info "Error during user update"
+end
+# => "[controller=UserUpdate] [user_id=user123] Error during user update"
+
+logger.info "Should have no context here"
+# => "Should have no context here"
+```
 
 ## Installation
 
