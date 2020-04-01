@@ -1,0 +1,1 @@
+require_relative "hanami_context_logging/logger"
