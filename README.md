@@ -5,12 +5,14 @@ This is a modification on top of Hanami::Logger to allow context logging.
 
 ### What is context logging?
 It's simply, logging the context or state of the application/processes without having to define it every time. Below is an example:
+Without context logging:
 ```
-# Without context logging:
 logger.info "[controller=#{self.class}] [user_id#{user.id}] Error during user update"
 # => "[controller=UserUpdate] [user_id=user123] Error during user update"
+```
 
-# With context logging
+With context logging
+```
 MyContextProvider.context # => { controller: self.class, user_id: user.id }
 logger = HanamiContextLogging::Logger.new(context_provider: MyContextProvider)
 
@@ -20,15 +22,36 @@ logger.info "Error during user update"
 # => "[controller=UserUpdate] [user_id=user123] Error during user update"
 ```
 
+## Installation
+
+Add this line to your application's Gemfile:
+
+```ruby
+gem 'hanami-context-logging'
+```
+
+And then execute:
+
+    $ bundle install
+
+Or install it yourself as:
+
+    $ gem install hanami-context-logging
+
+## Usage
+
 ### About context_provider
 context_provider is simply any object that responds to `#context` which returns a hash. The below are all valid context providers
+
+**Struct**
 ```
-# struct provider
 ContextProviderStruct = Struct.new(:context)
 provider = ContextProviderStruct.new(a_context: 'a_value')
 provider.context # returns context, all good
+```
 
-# A class
+**Class**
+```
 class ContextProviderClass
   def self.context
     { a_context: 'a_value' }
@@ -36,8 +59,10 @@ class ContextProviderClass
 end
 provider = ContextProviderClass
 provider.context # returns context, all good
+```
 
-# An object
+**Object**
+```
 class ContextProviderClass
   def context
     { a_context: 'a_value' }
@@ -78,26 +103,6 @@ end
 logger.info "Should have no context here"
 # => "Should have no context here"
 ```
-
-## Installation
-
-Add this line to your application's Gemfile:
-
-```ruby
-gem 'hanami-context-logging'
-```
-
-And then execute:
-
-    $ bundle install
-
-Or install it yourself as:
-
-    $ gem install hanami-context-logging
-
-## Usage
-
-TODO: Write usage instructions here
 
 ## Development
 
