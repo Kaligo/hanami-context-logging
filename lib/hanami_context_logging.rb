@@ -1,1 +1,2 @@
 require_relative "hanami_context_logging/logger"
+require_relative "hanami_context_logging/utils/benchmarking"

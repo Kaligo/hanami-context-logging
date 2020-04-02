@@ -29,19 +29,44 @@ RSpec.describe HanamiContextLogging::Logger do
   end
 
   describe '#with_context' do
-    let(:logger) { described_class.new(stream: stream, context_provider: mock_context_provider) }
-    it 'logs message including the context given from provider AND the ad hoc context' do
-      logger.info 'random message'
+    context 'when block is given' do
+      let(:logger) { described_class.new(stream: stream, context_provider: mock_context_provider) }
+      it 'logs message including the context given from provider AND the ad hoc context' do
+        logger.info 'random message before'
 
-      logger.with_context(additional_context: 'new_value') do
-        logger.info 'random message with ad hoc context'
+        logger.with_context(additional_context: 'new_value') do
+          logger.info 'random message with ad hoc context'
+        end
+
+        logger.info 'random message after'
+
+        stream.rewind
+        log_lines = stream.read.split("\n")
+        expect(log_lines[0]).to include('any_key_1=any_value_1', 'any_key_2=any_value_2', 'random message before')
+        expect(log_lines[0]).not_to include('additional_context=new_value', 'random message with ad hoc context')
+        expect(log_lines[1]).to include('any_key_1=any_value_1', 'any_key_2=any_value_2', 'additional_context=new_value', 'random message with ad hoc context')
+        expect(log_lines[2]).to include('any_key_1=any_value_1', 'any_key_2=any_value_2', 'random message after')
+        expect(log_lines[2]).not_to include('additional_context=new_value', 'random message with ad hoc context')
       end
+    end
 
-      stream.rewind
-      log_lines = stream.read.split("\n")
-      expect(log_lines[0]).to include('any_key_1=any_value_1', 'any_key_2=any_value_2', 'random message')
-      expect(log_lines[0]).not_to include('additional_context=new_value', 'random message with ad hoc context')
-      expect(log_lines[1]).to include('any_key_1=any_value_1', 'any_key_2=any_value_2', 'additional_context=new_value', 'random message with ad hoc context')
+    context 'when block is not given (method chained)' do
+      let(:logger) { described_class.new(stream: stream, context_provider: mock_context_provider) }
+      it 'logs message including the context given from provider AND the ad hoc context' do
+        logger.info 'random message before'
+
+        logger.with_context(additional_context: 'new_value').info 'random message with ad hoc context'
+
+        logger.info 'random message after'
+
+        stream.rewind
+        log_lines = stream.read.split("\n")
+        expect(log_lines[0]).to include('any_key_1=any_value_1', 'any_key_2=any_value_2', 'random message before')
+        expect(log_lines[0]).not_to include('additional_context=new_value', 'random message with ad hoc context')
+        expect(log_lines[1]).to include('any_key_1=any_value_1', 'any_key_2=any_value_2', 'additional_context=new_value', 'random message with ad hoc context')
+        expect(log_lines[2]).to include('any_key_1=any_value_1', 'any_key_2=any_value_2', 'random message after')
+        expect(log_lines[2]).not_to include('additional_context=new_value', 'random message with ad hoc context')
+      end
     end
   end
 end
