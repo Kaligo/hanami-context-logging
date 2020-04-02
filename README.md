@@ -91,13 +91,24 @@ Hanami.logger.info "Request accepted"
 
 ### Transient contexts
 
-This context logger also provides a method `with_context` to add transient contexts in a block
+This context logger also provides a method `with_context` to add transient contexts. You can use a block, where the context will be applied to only in the block
 ```
 logger = HanamiContextLogging::Logger.new
 
 logger.with_context(controller: self.class, user_id: user.id) do
   logger.info "Error during user update"
 end
+# => "[controller=UserUpdate] [user_id=user123] Error during user update"
+
+logger.info "Should have no context here"
+# => "Should have no context here"
+```
+
+or the syntatic-sugar method chain, where you can method-chain with your usual logger methods (info, error, etc)
+```
+logger = HanamiContextLogging::Logger.new
+
+logger.with_context(controller: self.class, user_id: user.id).info "Error during user update"
 # => "[controller=UserUpdate] [user_id=user123] Error during user update"
 
 logger.info "Should have no context here"

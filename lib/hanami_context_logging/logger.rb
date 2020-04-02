@@ -5,8 +5,6 @@ require_relative 'formatter/with_context_json'
 
 module HanamiContextLogging
   class Logger < Hanami::Logger
-    DEFAULT_APP_NAME ||= 'app'.freeze
-
     # A logger that has the same interface as Hanami::Logger, except
     # ContextLogger accepts one more option, called :context_provider
     # context_provider is just any object that responds to #context which returns a hash
@@ -18,9 +16,12 @@ module HanamiContextLogging
     # @param *args [any] any arbitrary Logger argument (will just be passed to Hanami::Logger)
     # @param options [Hash] Any Hanami::Logger options
     def initialize(app_name = default_application_name, *args, options) # rubocop:disable Style/OptionalArguments
-      context_provider = options.delete(:context_provider)
-      options[:formatter] = options[:formatter] || :with_context # default formatter
-      super(app_name, *args, options)
+      @initializing_arguments = [app_name, args, options]
+
+      options_copy = options.dup
+      context_provider = options_copy.delete(:context_provider)
+      options_copy[:formatter] = options_copy[:formatter] || :with_context # default formatter
+      super(app_name, *args, options_copy)
 
       @formatter.context_provider = context_provider
       @formatter.ad_hoc_context = {}
@@ -30,25 +31,51 @@ module HanamiContextLogging
     # and removes the ad hoc context after that. This is meant for
     # transient contexts where we want to add context just for the few logs
     #
-    # @param context [Hash] the extra context to be logged
-    # @param block [Proc] whatever logging that is to be done with this ad hoc context
-    # @example add an extra context to log
-    # logger = HanamiContextLogging.new(...)
-    # logger.with_context(new_context: 'value') do
-    #   logger.info 'test log message' #=> will print '[new_context=value] test log message'
-    # end
+    # @overload with_context(context) { block }
+    #   When block is provided, the context will be applied only into the block
+    #   @param context [Hash] the extra context to be logged
+    #   @param block [Proc] (optional) whatever logging that is to be done with this ad hoc context.
     #
-    # logger.info 'test log message' #=> will print just 'test log message'
+    #   @example add an extra context to log
+    #     logger = HanamiContextLogging.new(...)
+    #     logger.with_context(new_context: 'value') do
+    #       logger.info 'test log message' #=> will print '[new_context=value] test log message'
+    #     end
+    #
+    #     logger.info 'test log message' #=> will print just 'test log message'
+    #
+    # @overload with_context(context)
+    #   When block is not provided, it will return a new instance of logger with the context
+    #   This can be used in method chaining to achieve better readability
+    #   @param context [Hash] the extra context to be logged
+    #
+    #   @example add an extra context to log
+    #     logger = HanamiContextLogging.new(...)
+    #     logger.with_context(new_context: 'value').info 'test log message'
+    #     #=> will print '[new_context=value] test log message'
     def with_context(context)
-      @formatter.ad_hoc_context = context
-      yield if block_given?
-      @formatter.ad_hoc_context = {}
+      if block_given?
+        @formatter.ad_hoc_context = context
+        yield
+        @formatter.ad_hoc_context = {}
+      else
+        initialize_with_context(context)
+      end
     end
 
     private
 
+    def initialize_with_context(context)
+      app_name, args, opts = @initializing_arguments
+      temp_logger = self.class.new(app_name, *args, opts)
+      temp_logger.instance_eval do
+        @formatter.ad_hoc_context = context
+      end
+      temp_logger
+    end
+
     def default_application_name
-      return DEFAULT_APP_NAME unless Hanami.respond_to? (:environment)
+      return unless Hanami.respond_to? (:environment)
 
       Hanami.environment.project_name
     end
