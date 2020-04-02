@@ -115,6 +115,11 @@ logger.info "Should have no context here"
 # => "Should have no context here"
 ```
 
+## To-dos
+- Extract Usage section in readme to examples/wiki folder, it's a bit crowded up there
+- Allow nil context_provider. Right now it will break if not given
+- Allow nested contexts `logger.with_context(a).with_context(b).with_context(c).info 'asd'` should print all contexts. Currently it only prints the C context
+
 ## Development
 
 After checking out the repo, run `bin/setup` to install dependencies. Then, run `rake spec` to run the tests. You can also run `bin/console` for an interactive prompt that will allow you to experiment.
