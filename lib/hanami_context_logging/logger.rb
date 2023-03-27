@@ -15,13 +15,16 @@ module HanamiContextLogging
     # @param app_name [String] app name (defaults to app name)
     # @param *args [any] any arbitrary Logger argument (will just be passed to Hanami::Logger)
     # @param options [Hash] Any Hanami::Logger options
-    def initialize(app_name = default_application_name, *args, options) # rubocop:disable Style/OptionalArguments
-      @initializing_arguments = [app_name, args, options]
+    def initialize(application_name = nil, *args, **kwargs) # rubocop:disable Layout/LineLength
+      # rubocop:disable Style/OptionalArguments
+      @initializing_arguments = [application_name, args, kwargs]
 
-      options_copy = options.dup
+      options_copy = kwargs.dup
+      formatter ||= :with_context # default formatter
+
       context_provider = options_copy.delete(:context_provider)
-      options_copy[:formatter] = options_copy[:formatter] || :with_context # default formatter
-      super(app_name, *args, options_copy)
+      options_copy[:formatter] ||= :with_context # default formatter
+      super(application_name, *args, **options_copy)
 
       @formatter.context_provider = context_provider
       @formatter.ad_hoc_context = {}
@@ -67,7 +70,8 @@ module HanamiContextLogging
 
     def initialize_with_context(context)
       app_name, args, opts = @initializing_arguments
-      temp_logger = self.class.new(app_name, *args, opts)
+
+      temp_logger = self.class.new(app_name, *args, **opts)
       temp_logger.instance_eval do
         @formatter.ad_hoc_context = context
       end
