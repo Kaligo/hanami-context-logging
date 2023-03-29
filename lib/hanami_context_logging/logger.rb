@@ -20,7 +20,6 @@ module HanamiContextLogging
       @initializing_arguments = [application_name, args, kwargs]
 
       options_copy = kwargs.dup
-      formatter ||= :with_context # default formatter
 
       context_provider = options_copy.delete(:context_provider)
       options_copy[:formatter] ||= :with_context # default formatter
