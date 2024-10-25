@@ -41,35 +41,67 @@ Or install it yourself as:
 ## Usage
 
 ### About context_provider
-context_provider is simply any object that responds to `#context` which returns a hash. The below are all valid context providers
+context_provider is simply any object that responds to `#context` which returns a hash OR is convertible to a hash via #to_h. The below are all valid context providers
 
 **Struct**
 ```
 ContextProviderStruct = Struct.new(:context)
 provider = ContextProviderStruct.new(a_context: 'a_value')
-provider.context # returns context, all good
+provider.context # returns hash, all good
 ```
 
 **Class**
 ```
+# is a hash
 class ContextProviderClass
   def self.context
     { a_context: 'a_value' }
   end
 end
 provider = ContextProviderClass
-provider.context # returns context, all good
+provider.context # returns hash, all good
+
+# can be converted to hash via to_h
+class Context
+  def to_h
+    { a_context: 'a_value' }
+  end
+end
+
+class ContextProviderClass
+  def self.context
+    Context.new
+  end
+end
+provider = ContextProviderClass
+provider.context.to_h # convertible to hash, all good
 ```
 
 **Object**
 ```
+# is a hash
 class ContextProviderClass
   def context
+   { a_context: 'a_value' }
+  end
+ end
+ provider = ContextProviderClass.new
+ provider.context # returns hash, all good
+
+# can be converted to hash via to_h
+class Context
+  def to_h
     { a_context: 'a_value' }
   end
 end
-provider = ContextProviderClass.new
-provider.context # returns context, all good
+
+class ContextProviderClass
+  def self.context
+    Context.new
+  end
+end
+provider = ContextProviderClass
+provider.context.to_h # convertible to hash, all good
 ```
 
 The logger allows you to define your own context provider. A use case for context provider is when the context is not yet known during initialization, but will be known during logging. For example

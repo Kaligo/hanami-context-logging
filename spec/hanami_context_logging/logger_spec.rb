@@ -16,6 +16,24 @@ RSpec.describe HanamiContextLogging::Logger do
       stream.rewind
       expect(stream.read).to include('any_key_1=any_value_1', 'any_key_2=any_value_2', 'random message')
     end
+
+    context 'when context_provider#context is an object that responds to #to_h' do
+      let(:mock_context) do
+        double(to_h:
+          {
+            any_key_1: 'any_value_1',
+            any_key_2: 'any_value_2'
+          }
+        )
+      end
+
+      it 'logs message including the context given from provider' do
+        logger.info 'random message'
+
+        stream.rewind
+        expect(stream.read).to include('any_key_1=any_value_1', 'any_key_2=any_value_2', 'random message')
+      end
+    end
   end
 
   describe 'with with_context_json formatter' do
@@ -25,6 +43,24 @@ RSpec.describe HanamiContextLogging::Logger do
 
       stream.rewind
       expect(JSON.parse(stream.read)).to include('any_key_1' => 'any_value_1', 'any_key_2' => 'any_value_2', 'message' => 'random message')
+    end
+
+    context 'when context_provider#context is an object that responds to #to_h' do
+      let(:mock_context) do
+        double(to_h:
+          {
+            any_key_1: 'any_value_1',
+            any_key_2: 'any_value_2'
+          }
+        )
+      end
+
+      it 'logs message including the context given from provider' do
+        logger.info 'random message'
+
+        stream.rewind
+        expect(JSON.parse(stream.read)).to include('any_key_1' => 'any_value_1', 'any_key_2' => 'any_value_2', 'message' => 'random message')
+      end
     end
   end
 
