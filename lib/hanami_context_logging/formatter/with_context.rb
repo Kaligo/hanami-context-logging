@@ -17,8 +17,13 @@ module ContextLogger
     end
 
     def contexts
+      provider_context = if @context_provider.context.is_a?(Hash)
+                           @context_provider.context
+                         else
+                           @context_provider.context.to_h
+                         end
       {}.merge(
-        @context_provider.context,
+        provider_context,
         @ad_hoc_context
       )
     end

@@ -7,7 +7,8 @@ module HanamiContextLogging
   class Logger < Hanami::Logger
     # A logger that has the same interface as Hanami::Logger, except
     # ContextLogger accepts one more option, called :context_provider
-    # context_provider is just any object that responds to #context which returns a hash
+    # context_provider is just any object that responds to #context which returns a hash,
+    # OR returns an object that can be converted to hash via to_h
     #
     # We first need to extract this option, otherwise Hanami::Logger cannot be initialized due to unrecognized option
     # and pad the formatter to be :with_context by default
